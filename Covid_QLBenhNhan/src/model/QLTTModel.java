@@ -49,18 +49,15 @@ public class QLTTModel {
             benhNhan.setKhu(true); // Assign to Khu A
         }
 
-        // Check and update the patient's health status
+       
         if (benhNhan.getTinhTrang().equals("F0")||benhNhan.getTinhTrang().equals("f0")) {
-            // Additional logic for F0 status
-            benhNhan.setTinhTrang("Đang theo dõi"); // Update the health status
-            // You can add more specific actions for F0 status if needed
-        } else if (benhNhan.getTinhTrang().equals("F1")) {
-            // Additional logic for F1 status
-            benhNhan.setTinhTrang("Đang điều trị"); // Update the health status
-            // You can add more specific actions for F1 status if needed
+        	 benhNhan.setTinhTrang("F0");
+                    } else if (benhNhan.getTinhTrang().equals("F1")) {
+          
+            benhNhan.setTinhTrang("F1"); 
         } else if (benhNhan.getTinhTrang().equals("F2")) {
             // Additional logic for F2 status
-            benhNhan.setTinhTrang("Đang cách ly"); // Update the health status
+            benhNhan.setTinhTrang("F2"); // Update the health status
             // You can add more specific actions for F2 status if needed
         }
 

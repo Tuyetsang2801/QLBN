@@ -2,10 +2,14 @@ package view;
 
 import java.awt.Color;
 import java.awt.EventQueue;
-
 import java.awt.Font;
-import javax.swing.JButton;
+import java.sql.ResultSet;
+import java.util.Set;
+import java.util.TreeSet;
+
 import javax.swing.Action;
+import javax.swing.ButtonGroup;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -15,22 +19,16 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.ButtonGroup;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 
+import SQL.connectSQL;
 import controlller.QLBenhNhan;
 import model.BenhNhan;
 import model.QLTTModel;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
 public class QLTTView extends JFrame {
 	private JPanel contentPane1;
@@ -51,11 +49,9 @@ public class QLTTView extends JFrame {
 	public JTextField textField_SDT;
 	public ButtonGroup btn_GioiTinh;
 	public ButtonGroup btn_Khu;
-	private Object view;
-
-	/**
-	 * Launch the application.
-	 */
+	 private static DefaultTableModel tableModel;
+	  private connectSQL sqlConnection;
+	
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -70,6 +66,7 @@ public class QLTTView extends JFrame {
 	}
 
 	public QLTTView() {
+		  sqlConnection = new connectSQL();
 		setBackground(Color.WHITE);
 		this.model = new QLTTModel();
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -301,6 +298,10 @@ public class QLTTView extends JFrame {
 		btn_GioiTinh.add(rdbtnNu);
 		btn_GioiTinh.add(rdbtnNam);
 		this.setVisible(true);
+		 setContentPane(contentPane1);
+	        contentPane1.setLayout(null);
+		this.model = new QLTTModel();
+	
 	}
 
 	public void xoaForm() {
@@ -325,29 +326,30 @@ public class QLTTView extends JFrame {
 	
 
 	public void themHoacCapNhatBenhNhan(BenhNhan Bn) {
-		DefaultTableModel model_table = (DefaultTableModel) table.getModel();
-		if (!this.model.kiemTraTonTai(Bn)) {
-			this.model.insert(Bn);
-			this.themBenhNhanVaoTable(Bn);
-		} else {
-			this.model.update(Bn);
-			int soLuongDong = model_table.getRowCount();
-			for (int i = 0; i < soLuongDong; i++) {
-				String id = model_table.getValueAt(i, 0) + "";
-				if (id.equals(Bn.getSTT() + "")) {
-					model_table.setValueAt(Bn.getSTT() + "", i, 0);
-					model_table.setValueAt(Bn.getHoTen() + "", i, 1);
-					model_table.setValueAt((Bn.isGioiTinh() ? " Nữ " : " Nam "), i, 2);
-					model_table.setValueAt(Bn.getDiaChi() + "", i, 3);
-					model_table.setValueAt(Bn.getSoDienThoai() + "", i, 4);
-					model_table.setValueAt(Bn.getTinhTrang() + "", i, 5);
-					model_table.setValueAt((Bn.isKhu() ? "Khu A" : "Khu B"), i, 6);
-					model_table.setValueAt(Bn.getPhong() + "", i, 7);
-				}
-			}
-		}
+	    DefaultTableModel model_table = (DefaultTableModel) table.getModel();
+	    if (!this.model.kiemTraTonTai(Bn)) {
+	        this.model.insert(Bn);
+	        this.themBenhNhanVaoTable(Bn);
+	    } else {
+	        this.model.update(Bn);
+	        int soLuongDong = model_table.getRowCount();
+	        for (int i = 0; i < soLuongDong; i++) {
+	            String id = model_table.getValueAt(i, 0) + "";
+	            if (id.equals(Bn.getSTT() + "")) {
+	                model_table.setValueAt(Bn.getSTT() + "", i, 0);
+	                model_table.setValueAt(Bn.getHoTen() + "", i, 1);
+	                model_table.setValueAt((Bn.isGioiTinh() ? " Nữ " : " Nam "), i, 2);
+	                model_table.setValueAt(Bn.getDiaChi() + "", i, 3);
+	                model_table.setValueAt(Bn.getSoDienThoai() + "", i, 4);
+	                model_table.setValueAt(Bn.getTinhTrang() + "", i, 5);
+	                model_table.setValueAt((Bn.isKhu() ? "Khu A" : "Khu B"), i, 6);
+	                model_table.setValueAt(Bn.getPhong() + "", i, 7);
+	            }
+	        }
+	    }
 	}
 
+ 
 	public BenhNhan getBenhNhanDangChon() {
 		DefaultTableModel model_table = (DefaultTableModel) table.getModel();
 		int i_row = table.getSelectedRow();
@@ -405,7 +407,7 @@ public class QLTTView extends JFrame {
 
 	                if (luaChon == JOptionPane.YES_OPTION) {
 	                    System.out.println("Deleting patient: " + Bn); // Add this line for debugging
-
+	                    deleteDataFromDatabase(Bn);
 	                    this.model.delete(Bn);
 	                    model_table.removeRow(i_row);
 	                  
@@ -419,6 +421,51 @@ public class QLTTView extends JFrame {
 	        }
 	    } else {
 	        JOptionPane.showMessageDialog(this, "Vui lòng chọn một dòng để xóa.");
+	    }
+	  
+	}
+	public void thucHienXoaBenhNhan() {
+	    BenhNhan Bn = getBenhNhanDangChon();
+	    if (Bn != null) {
+	        int luaChon = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn xóa bệnh nhân đã chọn?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+
+	        if (luaChon == JOptionPane.YES_OPTION) {
+	            // Delete data from the model and table
+	            this.model.delete(Bn);
+	            deleteDataFromDatabase(Bn);
+	            sqlConnection.deleteData(Bn);
+	            // Refresh the table
+	            thucHienTaiLaiDuLieu();
+
+	            // Display success message or perform other actions as needed
+	            JOptionPane.showMessageDialog(this, "Xóa bệnh nhân thành công!");
+	        }
+	    } else {
+	        JOptionPane.showMessageDialog(this, "Vui lòng chọn một bệnh nhân để xóa.");
+	    }
+	}
+
+	public void thucHienCapNhatBenhNhan() {
+	    BenhNhan Bn = getBenhNhanDangChon();
+	    if (Bn != null) {
+	        Bn.setSTT(Integer.valueOf(this.textField_STT.getText()));
+	        Bn.setHoTen(this.textField_Name.getText());
+	        Bn.setGioiTinh(this.rdbtnNu.isSelected());
+	        Bn.setDiaChi(this.textField_DiaChi.getText());
+	        Bn.setSoDienThoai(this.textField_SDT.getText());
+	        Bn.setTinhTrang(this.textField_TinhTrang.getText());
+	        Bn.setKhu(this.rdbtnKhuA.isSelected());
+	        Bn.setPhong(Integer.valueOf(this.textField_Phong.getText()));
+	        // Update data in the model and table
+	        this.model.update(Bn);
+	        updateDataInDatabase(Bn);
+	        // Refresh the table
+	        thucHienTaiLaiDuLieu();
+
+	        // Display success message or perform other actions as needed
+	        JOptionPane.showMessageDialog(this, "Cập nhật thông tin thành công!");
+	    } else {
+	        JOptionPane.showMessageDialog(this, "Vui lòng chọn một bệnh nhân để cập nhật.");
 	    }
 	}
 
@@ -434,15 +481,24 @@ public class QLTTView extends JFrame {
 	}
 
 	public void thucHienThemBenhNhan() {
-		int STT = Integer.valueOf(this.textField_STT.getText());
-		String HoTen = this.textField_Name.getText();
-		if (HoTen.length() < 45) {
+		int STT;
+		try {
+	        STT = Integer.parseInt(this.textField_STT.getText());
+	    } catch (NumberFormatException e) {
+	        JOptionPane.showMessageDialog(null, "Số thứ tự không hợp lệ. Vui lòng nhập số nguyên.");
+	        return;
+	    }
 
-		} else {
-			JOptionPane.showMessageDialog(null, "Họ tên quá dài. Vui lòng nhập lại.");
-			return ;
-		}
+	    if (this.textField_Name.getText().isEmpty()) {
+	        JOptionPane.showMessageDialog(null, "Vui lòng nhập họ tên.");
+	        return;
+	    }
 
+	    String HoTen = this.textField_Name.getText();
+	    if (HoTen.length() > 45) {
+	        JOptionPane.showMessageDialog(null, "Họ tên quá dài. Vui lòng nhập lại.");
+	        return;
+	    }
 		boolean GioiTinh = true;
 		if (this.rdbtnNam.isSelected()) {
 			GioiTinh =false;
@@ -469,7 +525,27 @@ public class QLTTView extends JFrame {
 			Khu = true;
 		} else if (this.rdbtnKhuB.isSelected()) {
 			Khu = false;
-		}
+		}if (!(TinhTrang.equals("f1") || TinhTrang.equals("f0") || TinhTrang.equals("f2") || TinhTrang.equals("F0")
+				|| TinhTrang.equals("F1") || TinhTrang.equals("F2"))) {
+			JOptionPane.showMessageDialog(null, "Tình trạng không hợp lệ. Vui lòng nhập F1, F0 hoặc F2.");
+			return;
+
+		} if (TinhTrang.equalsIgnoreCase("F1") || TinhTrang.equalsIgnoreCase("F2")) {
+	        // For F1 or F2, Khu must be B
+	        if (Khu) {
+	            JOptionPane.showMessageDialog(null, "Chọn Khu B cho Tình trạng F1 hoặc F2.");
+	            return;
+	        }
+	    } else if (TinhTrang.equalsIgnoreCase("F0")) {
+	        // For F0, Khu must be A
+	        if (!Khu) {
+	            JOptionPane.showMessageDialog(null, "Chọn Khu A cho Tình trạng F0.");
+	            return;
+	        }
+	    } else {
+	        JOptionPane.showMessageDialog(null, "Tình trạng không hợp lệ. Vui lòng nhập F1, F0 hoặc F2.");
+	        return;
+	    }
 		int Phong = Integer.valueOf(this.textField_Phong.getText());
 		if(Phong<0||Phong>30) {
 			JOptionPane.showMessageDialog(null, "Không có số phòng này!Vui lòng nhập lại");
@@ -482,60 +558,56 @@ public class QLTTView extends JFrame {
 		        return; 
 		    }
 		BenhNhan Bn = new BenhNhan(STT, HoTen, GioiTinh, DiaChi, SoDienThoai, TinhTrang, Khu, Phong);
-		this.themHoacCapNhatBenhNhan(Bn);
-
+		 this.themHoacCapNhatBenhNhan(Bn);
+		 connectSQL.insertData(Bn);
 	}
 
 	
-	public void thucHienTim() {
-	    // Reset search
-	    this.thucHienTaiLaiDuLieu();
+	  public void thucHienTim() {
+	        // Reset search
+	        this.thucHienTaiLaiDuLieu();
 
-	    // Perform search
-	    String nameTimKiem = this.textField_NameTimKiem.getText().toLowerCase(); 
-	    String sttTimKiem = this.TextField_STTTimKiem.getText().toLowerCase(); 
-	    DefaultTableModel model_table = (DefaultTableModel) table.getModel();
-	    int soLuongDong = model_table.getRowCount();
+	        // Perform search
+	        String nameTimKiem = this.textField_NameTimKiem.getText().toLowerCase();
+	        String sttTimKiem = this.TextField_STTTimKiem.getText().toLowerCase();
+	        DefaultTableModel model_table = (DefaultTableModel) table.getModel();
+	        int soLuongDong = model_table.getRowCount();
 
-	    Set<Integer> STTBenhNhanCanXoa = new TreeSet<>();
+	        Set<Integer> STTBenhNhanCanXoa = new TreeSet<>();
 
-	    for (int i = 0; i < soLuongDong; i++) {
-	        String tenBenhNhan = model_table.getValueAt(i, 1).toString().toLowerCase();
-	        String stt = model_table.getValueAt(i, 0).toString().toLowerCase(); 
-
-	        if (tenBenhNhan.contains(nameTimKiem) || stt.equals(nameTimKiem) || stt.equals(sttTimKiem)) {
-	            STTBenhNhanCanXoa.add(Integer.valueOf(stt));
-	        }
-	    }
-
-	    if (nameTimKiem.length() > 0) {
 	        for (int i = 0; i < soLuongDong; i++) {
-	            String id = model_table.getValueAt(i, 0).toString();
-	            if (!id.equals(nameTimKiem)) {
-	                STTBenhNhanCanXoa.add(Integer.valueOf(id));
+	            String tenBenhNhan = model_table.getValueAt(i, 1).toString().toLowerCase();
+	            String stt = model_table.getValueAt(i, 0).toString().toLowerCase();
+
+	            if (tenBenhNhan.contains(nameTimKiem) || stt.equals(nameTimKiem) || stt.equals(sttTimKiem)) {
+	                STTBenhNhanCanXoa.add(Integer.valueOf(stt));
 	            }
 	        }
-	    }
-	    for (Integer STTCanXoa : STTBenhNhanCanXoa) {
-	    	System.out.println(STTCanXoa);
-			soLuongDong = model_table.getRowCount();
-	        for (int i = 0; i < soLuongDong; i++) {
-	            String STTTrongTable = model_table.getValueAt(i, 0).toString();
-	            System.out.println("idTrongTable: " + STTTrongTable);
-				if (STTTrongTable.equals(STTCanXoa.toString())) {
-					System.out.println("Đã xóa: " + i);
-					try {
-						model_table.removeRow(i);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					break;
-				}
+
+	        if (nameTimKiem.length() > 0) {
+	            for (int i = 0; i < soLuongDong; i++) {
+	                String id = model_table.getValueAt(i, 0).toString();
+	                if (!id.equals(nameTimKiem)) {
+	                    STTBenhNhanCanXoa.add(Integer.valueOf(id));
+	                }
 	            }
 	        }
-	    }
+	        for (Integer STTCanXoa : STTBenhNhanCanXoa) {
+	            System.out.println(STTCanXoa);
+	            soLuongDong = model_table.getRowCount();
+	            for (int i = 0; i < soLuongDong; i++) {
+	                String STTTrongTable = model_table.getValueAt(i, 0).toString();
+	                System.out.println("idTrongTable: " + STTTrongTable);
+	                if (STTTrongTable.equals(STTCanXoa.toString())) {
+	                    System.out.println("Đúng");
+	                    model_table.removeRow(i);
+	                    break;
+	                }
+	            }
+	        }
+	  }
 	
-
+	 
 	public void thucHienTaiLaiDuLieu() {
 		while (true) {
 			DefaultTableModel model_table = (DefaultTableModel) table.getModel();
@@ -560,6 +632,78 @@ public class QLTTView extends JFrame {
 		if (luaChon == JOptionPane.YES_OPTION) {
 			System.exit(0);
 		}
+		 updateTableFromMySQL(connectSQL.retrieveData());
 	}
+
+	 public void updateTableFromMySQL(ResultSet resultSet) {
+	        try {
+	            // Clear existing data from the table
+	            while (tableModel.getRowCount() > 0) {
+	                tableModel.removeRow(0);
+	            }
+
+	            // Iterate through the ResultSet and add data to the table model
+	            while (resultSet.next()) {
+	                int STT = resultSet.getInt("STT");
+	                String HoTen = resultSet.getString("HoTen");
+	                String GioiTinh = resultSet.getString("GioiTinh");
+	                String DiaChi = resultSet.getString("DiaChi");
+	                String SoDienThoai = resultSet.getString("SoDienThoai");
+	                String TinhTrang = resultSet.getString("TinhTrang");
+	                String Khu = resultSet.getString("Khu");
+	                int Phong = resultSet.getInt("Phong");
+
+	                // Add data to the table model
+	                tableModel.addRow(new Object[]{STT, HoTen, GioiTinh, DiaChi, SoDienThoai, TinhTrang, Khu, Phong});
+	            }
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
+	    }
+	 public void deleteDataFromDatabase(BenhNhan bn) {
+		    try {
+		        sqlConnection.deleteData(bn);
+
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		        JOptionPane.showMessageDialog(this, "Error deleting data from the database: " + e.getMessage());
+		    }
+		}
+	 public void updateDataInDatabase(BenhNhan bn) {
+		    try {
+		        sqlConnection.updateData(bn);
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		        JOptionPane.showMessageDialog(this, "Error updating data in the database: " + e.getMessage());
+		    }
+		}
+	 public void insertDataToDatabase(BenhNhan bn) {
+		    try {
+		        connectSQL.insertData(bn);
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		        JOptionPane.showMessageDialog(this, "Error inserting data to the database: " + e.getMessage());
+		    }
+		}
+
+	 public static void add(Object[] rowData) {
+	        if (tableModel == null) {
+	           
+	            tableModel = new DefaultTableModel();
+	    
+	            tableModel.addColumn("STT");
+	            tableModel.addColumn("Họ tên");
+	            tableModel.addColumn("Giới tính");
+	            tableModel.addColumn("Địa chỉ");
+	            tableModel.addColumn("SDT");
+	            tableModel.addColumn("Tình trạng");
+	            tableModel.addColumn("Khu");
+	            tableModel.addColumn("Phòng");
+	        }
+
+	        // Add the row to the tableModel
+	        tableModel.addRow(rowData);
+	    }
+	
 
 }

@@ -31,8 +31,17 @@ public class QLBenhNhan implements Action {
 	        }
 	    } else if (cm.equals("Sửa")) {
 	        this.view.hienThiThongTinBenhNhanDaChon();
+	        
+	        if(cm.equals("Ok")) {
+	        	this.view.thucHienCapNhatBenhNhan();
+	        ;
+	        	
+	        }
 	    } else if (cm.equals("Xóa")) {
 	        this.view.thucHienXoa();
+	        if(cm.equals("YES")) {
+	        this.view.thucHienXoaBenhNhan();
+	        }
 	    } else if (cm.equals("Bỏ")) { // Change to "Bỏ" (with accent)
 	        this.view.xoaForm();
 	    } else if (cm.equals("Tìm")) {
